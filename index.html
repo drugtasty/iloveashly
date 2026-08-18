@@ -1662,73 +1662,190 @@ function applyTimestamps() {
 }
 applyTimestamps();
 
-// ═══ AUTO-SYNC: detect vocal onsets via Web Audio API ═══
+// ═══ ADVANCED AUTO-SYNC: spectral flux onset + dynamic programming alignment ═══
 let autoSyncDone = false;
 
 async function autoSyncLyrics() {
   if (autoSyncDone) return;
   autoSyncDone = true;
   const syncStatus = document.getElementById('syncStatus');
-  syncStatus.textContent = 'analyzing audio...';
+  syncStatus.textContent = 'analyzing waveform...';
   syncStatus.style.display = 'block';
+  syncStatus.style.color = 'var(--pink-deep)';
 
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const response = await fetch('Forever.mp3');
-  const arrayBuf = await response.arrayBuffer();
-  const audioBuf = await audioCtx.decodeAudioData(arrayBuf);
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const response = await fetch('Forever.mp3');
+    const arrayBuf = await response.arrayBuffer();
+    const audioBuf = await audioCtx.decodeAudioData(arrayBuf);
 
-  const rawData = audioBuf.getChannelData(0);
-  const sampleRate = audioBuf.sampleRate;
+    const rawL = audioBuf.getChannelData(0);
+    const rawR = audioBuf.numberOfChannels > 1 ? audioBuf.getChannelData(1) : rawL;
+    const sr = audioBuf.sampleRate;
+    const fftSize = 2048;
+    const hopSize = 512;
+    const binCount = fftSize / 2;
 
-  const windowSize = Math.floor(sampleRate * 0.05);
-  const hopSize = Math.floor(sampleRate * 0.025);
-  const minGapBetween = 1.5;
-  const minOnsetEnergy = 0.03;
-  const lookback = 4;
-  const analyzeStartSec = HK_START - 2;
+    const hannWindow = new Float32Array(fftSize);
+    for (let i = 0; i < fftSize; i++) hannWindow[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (fftSize - 1)));
 
-  const energies = [];
-  for (let i = 0; i + windowSize < rawData.length; i += hopSize) {
-    let sum = 0;
-    for (let j = 0; j < windowSize; j++) sum += rawData[i + j] * rawData[i + j];
-    energies.push(Math.sqrt(sum / windowSize));
-  }
-
-  const onsets = [];
-  let lastOnsetTime = analyzeStartSec - minGapBetween;
-
-  for (let i = lookback; i < energies.length; i++) {
-    const t = (i * hopSize) / sampleRate;
-    if (t < analyzeStartSec) continue;
-    let recentAvg = 0, prevAvg = 0;
-    for (let k = 0; k < lookback; k++) {
-      recentAvg += energies[i - k];
-      prevAvg += energies[i - k - lookback];
+    const magFrames = [];
+    for (let pos = 0; pos + fftSize <= rawL.length; pos += hopSize) {
+      const frameL = new Float32Array(fftSize);
+      const frameR = new Float32Array(fftSize);
+      for (let i = 0; i < fftSize; i++) {
+        frameL[i] = (rawL[pos + i] + rawR[pos + i]) * 0.5 * hannWindow[i];
+      }
+      const re = frameL;
+      const im = new Float32Array(fftSize);
+      fftInPlace(re, im);
+      const mags = new Float32Array(binCount);
+      for (let k = 0; k < binCount; k++) mags[k] = Math.sqrt(re[k] * re[k] + im[k] * im[k]);
+      magFrames.push(mags);
     }
-    recentAvg /= lookback;
-    prevAvg /= lookback;
-    if (recentAvg > minOnsetEnergy && recentAvg > prevAvg * 1.4 && (t - lastOnsetTime) >= minGapBetween) {
-      onsets.push(t);
-      lastOnsetTime = t;
+
+    const spectralFlux = new Float32Array(magFrames.length);
+    for (let i = 1; i < magFrames.length; i++) {
+      let flux = 0;
+      for (let k = 0; k < binCount; k++) {
+        const diff = magFrames[i][k] - magFrames[i - 1][k];
+        if (diff > 0) flux += diff;
+      }
+      spectralFlux[i] = flux;
     }
-  }
 
-  const timestamps = [];
-  for (let i = 0; i < lyricsTexts.length; i++) {
-    const t = onsets[i] !== undefined ? parseFloat(onsets[i].toFixed(2)) : (i > 0 ? timestamps[i-1].time + 6 : HK_START);
-    timestamps.push({ time: t, text: lyricsTexts[i] });
-  }
-  lyricsData = timestamps;
-  localStorage.setItem('lyricsTimestamps', JSON.stringify(lyricsData));
-  applyTimestamps();
+    const medianWindow = 15;
+    const peaks = [];
+    for (let i = medianWindow; i < spectralFlux.length - medianWindow; i++) {
+      const window = [];
+      for (let j = i - medianWindow; j <= i + medianWindow; j++) window.push(spectralFlux[j]);
+      window.sort((a, b) => a - b);
+      const median = window[Math.floor(window.length / 2)];
+      const threshold = median * 1.8 + 0.001;
+      if (spectralFlux[i] > threshold && spectralFlux[i] >= spectralFlux[i - 1] && spectralFlux[i] >= spectralFlux[i + 1]) {
+        const timeSec = (i * hopSize) / sr;
+        peaks.push({ time: timeSec, strength: spectralFlux[i] });
+      }
+    }
 
-  syncStatus.textContent = 'auto-synced! (' + onsets.length + ' vocal phrases found)';
-  syncStatus.style.color = '#4CAF50';
-  setTimeout(() => { syncStatus.style.display = 'none'; syncStatus.style.color = ''; }, 3000);
-  audioCtx.close();
+    const minGap = 2.0;
+    const filteredPeaks = [];
+    for (const p of peaks) {
+      if (filteredPeaks.length === 0 || (p.time - filteredPeaks[filteredPeaks.length - 1].time) >= minGap) {
+        filteredPeaks.push(p);
+      } else if (p.strength > filteredPeaks[filteredPeaks.length - 1].strength) {
+        filteredPeaks[filteredPeaks.length - 1] = p;
+      }
+    }
+
+    const analyzeFrom = HK_START - 3;
+    const vocalPeaks = filteredPeaks.filter(p => p.time >= analyzeFrom);
+
+    const N = lyricsTexts.length;
+    const M = vocalPeaks.length;
+
+    if (M >= N) {
+      const cost = new Float32Array(M * N);
+      const parent = new Int32Array(M * N).fill(-1);
+      const INF = 1e9;
+
+      for (let j = 0; j < M; j++) cost[j * N + 0] = 0;
+
+      for (let i = 1; i < N; i++) {
+        let bestCost = INF, bestJ = -1;
+        for (let j = 0; j < M; j++) {
+          let minPrev = INF;
+          for (let pj = 0; pj < j; pj++) {
+            const prevVal = cost[pj * N + (i - 1)];
+            if (prevVal < minPrev) { minPrev = prevVal; }
+          }
+          const gap = vocalPeaks[j].time - (i > 0 && parent[(j) * N + (i - 1)] >= 0 ? vocalPeaks[parent[(j) * N + (i - 1)]].time : analyzeFrom);
+          const idealGap = 6;
+          const gapCost = Math.abs(gap - idealGap) * 2;
+          const strengthBonus = -Math.log(vocalPeaks[j].strength + 0.001) * 0.5;
+          cost[j * N + i] = minPrev + gapCost + strengthBonus;
+        }
+      }
+
+      let finalBest = INF, finalJ = -1;
+      for (let j = 0; j < M; j++) {
+        if (cost[j * N + (N - 1)] < finalBest) {
+          finalBest = cost[j * N + (N - 1)];
+          finalJ = j;
+        }
+      }
+
+      const aligned = new Array(N);
+      let curJ = finalJ, curI = N - 1;
+      while (curI >= 0) {
+        aligned[curI] = vocalPeaks[curJ].time;
+        let bestPrev = INF, bestPj = -1;
+        for (let pj = 0; pj < curJ; pj++) {
+          if (cost[pj * N + (curI > 0 ? curI - 1 : 0)] < bestPrev) {
+            bestPrev = cost[pj * N + (curI > 0 ? curI - 1 : 0)];
+            bestPj = pj;
+          }
+        }
+        curJ = bestPj;
+        curI--;
+      }
+
+      for (let i = 0; i < N; i++) {
+        lyricsData[i].time = parseFloat(aligned[i].toFixed(2));
+      }
+    } else {
+      const spacing = vocalPeaks.length > 1
+        ? (vocalPeaks[vocalPeaks.length - 1].time - vocalPeaks[0].time) / (vocalPeaks.length - 1)
+        : 5;
+      for (let i = 0; i < N; i++) {
+        lyricsData[i].time = parseFloat((vocalPeaks[0] ? vocalPeaks[0].time + i * spacing : analyzeFrom + i * 5).toFixed(2));
+      }
+    }
+
+    localStorage.setItem('lyricsTimestamps', JSON.stringify(lyricsData));
+    applyTimestamps();
+    syncStatus.textContent = 'auto-synced! (' + vocalPeaks.length + ' vocal peaks detected)';
+    syncStatus.style.color = '#4CAF50';
+    setTimeout(() => { syncStatus.style.display = 'none'; syncStatus.style.color = ''; }, 3000);
+    audioCtx.close();
+  } catch (e) {
+    syncStatus.textContent = 'sync failed, using default timestamps';
+    syncStatus.style.color = '#f44336';
+    setTimeout(() => { syncStatus.style.display = 'none'; syncStatus.style.color = ''; }, 3000);
+  }
 }
 
-// auto-sync on first play
+function fftInPlace(re, im) {
+  const n = re.length;
+  if (n === 1) return;
+  let j = 0;
+  for (let i = 0; i < n - 1; i++) {
+    if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; }
+    let k = n >> 1;
+    while (k <= j) { j -= k; k >>= 1; }
+    j += k;
+  }
+  for (let len = 2; len <= n; len *= 2) {
+    const half = len / 2;
+    const angle = -2 * Math.PI / len;
+    const wRe = Math.cos(angle), wIm = Math.sin(angle);
+    for (let i = 0; i < n; i += len) {
+      let curRe = 1, curIm = 0;
+      for (let k = 0; k < half; k++) {
+        const tRe = curRe * re[i + k + half] - curIm * im[i + k + half];
+        const tIm = curRe * im[i + k + half] + curIm * re[i + k + half];
+        re[i + k + half] = re[i + k] - tRe;
+        im[i + k + half] = im[i + k] - tIm;
+        re[i + k] += tRe;
+        im[i + k] += tIm;
+        const newRe = curRe * wRe - curIm * wIm;
+        curIm = curRe * wIm + curIm * wRe;
+        curRe = newRe;
+      }
+    }
+  }
+}
+
 if (songAudio) {
   songAudio.addEventListener('play', function autoSyncOnce() {
     autoSyncLyrics();
@@ -1736,12 +1853,12 @@ if (songAudio) {
   });
 }
 
-// re-sync button
 const syncBtn = document.getElementById('syncBtn');
 if (syncBtn) {
   syncBtn.addEventListener('click', () => {
     autoSyncDone = false;
     localStorage.removeItem('lyricsTimestamps');
+    resetLyrics();
     autoSyncLyrics();
   });
 }
