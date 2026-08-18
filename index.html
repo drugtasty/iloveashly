@@ -919,6 +919,112 @@ section {
   margin-top: 0.4rem;
   line-height: 1.3;
 }
+.movie-item { cursor: pointer; }
+.movie-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  z-index: 200;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+.movie-modal-overlay.open { display: flex; }
+.movie-modal {
+  background: var(--white);
+  border-radius: 20px;
+  max-width: 420px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  border: 2px solid var(--pink-light);
+}
+.movie-modal::-webkit-scrollbar { width: 6px; }
+.movie-modal::-webkit-scrollbar-track { background: var(--pink-light); border-radius: 10px; }
+.movie-modal::-webkit-scrollbar-thumb { background: var(--pink-deep); border-radius: 10px; }
+.movie-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-light);
+  cursor: pointer;
+  line-height: 1;
+}
+.movie-modal-close:hover { color: var(--pink-deep); }
+.movie-modal-header {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+.movie-modal-poster {
+  width: 100px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  flex-shrink: 0;
+}
+.movie-modal-info { flex: 1; }
+.movie-modal-title {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.3rem;
+}
+.movie-modal-year {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin-bottom: 0.6rem;
+}
+.movie-modal-scores {
+  display: flex;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+.movie-score {
+  text-align: center;
+}
+.movie-score-icon { font-size: 1.2rem; }
+.movie-score-pct {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.movie-score-label {
+  font-size: 0.55rem;
+  color: var(--text-light);
+  font-weight: 600;
+}
+.movie-modal-desc {
+  font-size: 0.75rem;
+  color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 0.8rem;
+}
+.movie-modal-quote {
+  font-size: 0.7rem;
+  color: var(--text-light);
+  font-style: italic;
+  border-left: 3px solid var(--pink);
+  padding-left: 0.8rem;
+  line-height: 1.5;
+}
+.movie-modal-quote-source {
+  font-size: 0.6rem;
+  color: var(--pink-deep);
+  font-style: normal;
+  font-weight: 600;
+  margin-top: 0.3rem;
+}
 .dog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -1410,28 +1516,28 @@ footer .credit {
       <div class="extras-card extras-card-wide">
         <div class="extras-card-title">Shows & Movies</div>
         <div class="movie-grid">
-          <div class="movie-item">
+          <div class="movie-item" data-movie="0">
             <img src="movies/fear-street-1.jpg" alt="Fear Street: 1994">
             <div class="movie-label">Fear Street: 1994</div>
           </div>
-          <div class="movie-item">
-            <img src="https://image.tmdb.org/t/p/w300/gzKtyIDaPvRhxeDPJjgKoJ5Mjfp.jpg" alt="Fear Street: 1978" onerror="this.src='movies/fear-street-2.jpg'">
+          <div class="movie-item" data-movie="1">
+            <img src="movies/fear-street-2.jpg" alt="Fear Street: 1978">
             <div class="movie-label">Fear Street: 1978</div>
           </div>
-          <div class="movie-item">
-            <img src="https://image.tmdb.org/t/p/w300/kFb8bKRIBnXnK1p3a389uJdMFs2.jpg" alt="Fear Street: 1666" onerror="this.src='movies/fear-street-3.jpg'">
+          <div class="movie-item" data-movie="2">
+            <img src="movies/fear-street-3.jpg" alt="Fear Street: 1666">
             <div class="movie-label">Fear Street: 1666</div>
           </div>
-          <div class="movie-item">
-            <img src="https://image.tmdb.org/t/p/w300/fp5kWl99CB2v3Kl7fB1k6fM2I3w.jpg" alt="The Nun II" onerror="this.src='movies/the-nun-2.jpg'">
+          <div class="movie-item" data-movie="3">
+            <img src="movies/the-nun-2.jpg" alt="The Nun II">
             <div class="movie-label">The Nun II</div>
           </div>
-          <div class="movie-item">
+          <div class="movie-item" data-movie="4">
             <img src="movies/us-2019.jpg" alt="Us">
             <div class="movie-label">Us</div>
           </div>
-          <div class="movie-item">
-            <img src="https://image.tmdb.org/t/p/w300/x2vJOGsBCIXOz4V3qR9GnM5VW3r.jpg" alt="Stranger Things" onerror="this.style.background='var(--pink-light)';this.style.height='160px';this.alt='ST'">
+          <div class="movie-item" data-movie="5">
+            <img src="movies/stranger-things.jpg" alt="Stranger Things" onerror="this.style.background='linear-gradient(135deg,#c084fc,#ec4899)';this.style.objectFit='contain';this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 140%22><text x=%2250%22 y=%2270%22 text-anchor=%22middle%22 font-size=%2250%22>ST</text></svg>'">
             <div class="movie-label">Stranger Things</div>
           </div>
         </div>
@@ -1454,6 +1560,23 @@ footer .credit {
   <div class="date" id="footer-date"></div>
   <div class="credit">hello kitty &amp; korilakkuma inspired</div>
 </footer>
+
+<!-- movie modal -->
+<div class="movie-modal-overlay" id="movieModal">
+  <div class="movie-modal">
+    <button class="movie-modal-close" id="movieModalClose">&times;</button>
+    <div class="movie-modal-header">
+      <img class="movie-modal-poster" id="movieModalPoster" src="" alt="">
+      <div class="movie-modal-info">
+        <div class="movie-modal-title" id="movieModalTitle"></div>
+        <div class="movie-modal-year" id="movieModalYear"></div>
+        <div class="movie-modal-scores" id="movieModalScores"></div>
+      </div>
+    </div>
+    <div class="movie-modal-desc" id="movieModalDesc"></div>
+    <div class="movie-modal-quote" id="movieModalQuote"></div>
+  </div>
+</div>
 
 <!-- lightbox -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
@@ -1977,6 +2100,45 @@ document.querySelectorAll('a[href="#music"]').forEach(a => {
     document.getElementById('music').scrollIntoView({ behavior: 'smooth' });
   });
 });
+
+// ═══ MOVIE MODAL ═══
+const movieData = [
+  { title: 'Fear Street: 1994', year: '2021', poster: 'movies/fear-street-1.jpg', rtCritics: 84, rtAudience: 63, desc: 'A group of teenagers in Shadyside accidentally unleashes an evil force that begins a killing spree. They must confront a 300-year-old curse that has plagued their town for centuries.', quote: 'The young cast is excellent. Janiak\'s eye for crisp horror keeps things refreshingly propulsive and infinitely surprising.', quoteSource: 'Nerdist — 3.5/5' },
+  { title: 'Fear Street: 1978', year: '2021', poster: 'movies/fear-street-2.jpg', rtCritics: 88, rtAudience: 81, desc: 'In 1978, Camp Nightwing is torn apart by a ruthless killer. Shadysiders must fight to survive the night — and discover the origins of the curse that haunts their town.', quote: 'A solid continuation that improves on the first. Darker, bloodier, and more focused — this is the best slasher in the trilogy.', quoteSource: 'Variety' },
+  { title: 'Fear Street: 1666', year: '2021', poster: 'movies/fear-street-3.jpg', rtCritics: 89, rtAudience: 75, desc: 'The origins of Sarah Fier\'s curse are finally revealed as history comes full circle. The truth behind Shadyside\'s evil changes everything — and one night will determine the fate of the town forever.', quote: 'The strongest film in the trilogy. It connects past and present in a way that makes the curse feel less like a horror device and more like a story about injustice.', quoteSource: 'Sight & Sound' },
+  { title: 'The Nun II', year: '2023', poster: 'movies/the-nun-2.jpg', rtCritics: 51, rtAudience: 72, desc: 'In 1956 France, a priest is violently murdered, and Sister Irene begins to investigate. She once again comes face-to-face with the demonic entity Valak.', quote: 'Better than the first one, The Nun II makes up for its so-so story with plenty of fun jump scares.', quoteSource: 'Rotten Tomatoes Consensus' },
+  { title: 'Us', year: '2019', poster: 'movies/us-2019.jpg', rtCritics: 93, rtAudience: 65, desc: 'Husband and wife Gabe and Adelaide Wilson take their kids to their beach house, expecting to unplug and unwind with friends. But as night descends, their serenity turns to tension when four uninvited figures — who look exactly like them — arrive.', quote: 'Jordan Peele delivers a scarier, more ambitious follow-up that digs deeper into the horrors of American society.', quoteSource: 'IndieWire' },
+  { title: 'Stranger Things', year: '2016–2025', poster: 'movies/stranger-things.jpg', rtCritics: 90, rtAudience: 83, desc: 'When a young boy vanishes, a small town uncovers a mystery involving secret experiments, terrifying supernatural forces and one very strange little girl.', quote: 'Stranger Things is an homage to \'80s genre classics that\'s elevated by a compelling mystery and a stellar cast of young actors.', quoteSource: 'Rotten Tomatoes Consensus' }
+];
+
+const movieModal = document.getElementById('movieModal');
+const movieModalClose = document.getElementById('movieModalClose');
+
+document.querySelectorAll('.movie-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const idx = parseInt(item.getAttribute('data-movie'));
+    const m = movieData[idx];
+    if (!m) return;
+    document.getElementById('movieModalPoster').onerror = function() {
+      this.style.background = 'linear-gradient(135deg,#c084fc,#ec4899)';
+      this.style.display = 'flex';
+      this.alt = m.title.charAt(0);
+    };
+    document.getElementById('movieModalPoster').src = m.poster;
+    document.getElementById('movieModalPoster').alt = m.title;
+    document.getElementById('movieModalTitle').textContent = m.title;
+    document.getElementById('movieModalYear').textContent = m.year;
+    document.getElementById('movieModalDesc').textContent = m.desc;
+    const scoresHtml = '<div class="movie-score"><div class="movie-score-icon">🍅</div><div class="movie-score-pct" style="color:' + (m.rtCritics >= 60 ? '#21d07a' : '#db2360') + '">' + m.rtCritics + '%</div><div class="movie-score-label">Critics</div></div><div class="movie-score"><div class="movie-score-icon">🍿</div><div class="movie-score-pct" style="color:' + (m.rtAudience >= 60 ? '#f9a8d4' : '#db2360') + '">' + m.rtAudience + '%</div><div class="movie-score-label">Audience</div></div>';
+    document.getElementById('movieModalScores').innerHTML = scoresHtml;
+    document.getElementById('movieModalQuote').innerHTML = '"' + m.quote + '"<div class="movie-modal-quote-source">' + m.quoteSource + '</div>';
+    movieModal.classList.add('open');
+  });
+});
+
+movieModalClose.addEventListener('click', () => movieModal.classList.remove('open'));
+movieModal.addEventListener('click', (e) => { if (e.target === movieModal) movieModal.classList.remove('open'); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') movieModal.classList.remove('open'); });
 </script>
 </body>
 </html>
