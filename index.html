@@ -454,6 +454,32 @@ section {
   opacity: 1;
   transform: scale(1.2);
 }
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 3rem;
+  color: white;
+  cursor: pointer;
+  background: rgba(0,0,0,0.3);
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: opacity 0.2s, background 0.2s;
+  font-family: 'Quicksand', sans-serif;
+  z-index: 301;
+}
+.lightbox-nav:hover {
+  opacity: 1;
+  background: rgba(0,0,0,0.5);
+}
+.lightbox-prev { left: 1.5rem; }
+.lightbox-next { right: 1.5rem; }
 .gallery-placeholder {
   width: 100%; height: 100%;
   display: flex;
@@ -1326,9 +1352,11 @@ footer .credit {
   border-radius: 12px;
   border: 2px solid var(--pink-light);
   transition: transform 0.3s;
+  cursor: pointer;
 }
 .plan-card-imgs img:hover {
   transform: scale(1.05);
+  border-color: var(--pink);
 }
 .plan-card-status {
   display: inline-block;
@@ -1806,6 +1834,14 @@ footer .credit {
     <div class="secret-error" id="secretError"></div>
     <button class="secret-btn" id="secretBtn" onclick="trySecret()">unlock</button>
   </div>
+</div>
+
+<!-- plan image lightbox -->
+<div class="lightbox" id="planLightbox" onclick="closePlanLightbox()">
+  <button class="lightbox-close">&times;</button>
+  <button class="lightbox-nav lightbox-prev" onclick="event.stopPropagation(); navPlanLightbox(-1)">&#8249;</button>
+  <img id="planLightboxImg" src="" alt="photo">
+  <button class="lightbox-nav lightbox-next" onclick="event.stopPropagation(); navPlanLightbox(1)">&#8250;</button>
 </div>
 
 <!-- future plans (hidden until unlocked) -->
@@ -2422,7 +2458,7 @@ if (sessionStorage.getItem('secretUnlocked') === '1') {
 const futurePlans = [
   { icon: '💕', title: 'Spend the rest of our lives together', desc: 'Every morning waking up next to you. Every night falling asleep with you. Forever and always.', imgs: ['forever.jpg'], status: 'todo' },
   { icon: '✈️', title: 'Travel to the countryside of Japan', desc: 'Walk through bamboo forests, visit ancient temples, eat authentic food, and get lost in the beauty of rural Japan together.', imgs: ['japan/yufuin.webp', 'japan/countryside1.jpg', 'japan/countryside5.jpg', 'japan/countryside6.jpg'], status: 'someday' },
-  { icon: '🖥️', title: 'Matching pink & black setups', desc: 'Side by side desks, matching aesthetic, same energy. Our own little gaming world.', imgs: ['setups/pink-black.jpg', 'setups/setup1.jpg', 'setups/setup3.jpg', 'setups/setup5.jpg'], status: 'soon' },
+  { icon: '🖥️', title: 'Matching pink & black setups', desc: 'Side by side desks, matching aesthetic, same energy. Our own little gaming world.', imgs: ['setups/pink-black.jpg', 'setups/setup1.jpg', 'setups/setup2.jpg', 'setups/setup3.jpg', 'setups/setup4.jpg'], status: 'soon' },
   { icon: '🏠', title: 'Move in together', desc: 'Our own place. Our rules. Our home. The beginning of everything.', imgs: ['home.jpg'], status: 'someday' },
   { icon: '🎂', title: 'Celebrate our 1 year anniversary', desc: 'One full year of us. We\'ll celebrate every year after that, big or small.', imgs: ['celebrate.jpg'], status: 'todo' },
   { icon: '🍳', title: 'Make meals together', desc: 'Pick a recipe, mess it up, order pizza anyway. The process is the point.', imgs: ['cooking.jpg'], status: 'soon' },
@@ -2445,6 +2481,40 @@ futurePlans.forEach(p => {
   card.innerHTML = '<div class="plan-card-icon">' + p.icon + '</div><div class="plan-card-title">' + p.title + '</div><div class="plan-card-desc">' + p.desc + '</div>' + imgsHtml + '<div class="plan-card-status ' + statusClass + '">' + statusLabel + '</div>';
   if (p.imgs && p.imgs.length >= 2) card.classList.add('plan-card-wide');
   plansGrid.appendChild(card);
+});
+
+// ═══ PLAN IMAGE LIGHTBOX ═══
+let planLightboxSrcs = [];
+let planLightboxIdx = 0;
+
+function openPlanLightbox(src) {
+  const allImgs = document.querySelectorAll('.plan-card-imgs img');
+  planLightboxSrcs = Array.from(allImgs).map(i => i.src);
+  planLightboxIdx = planLightboxSrcs.indexOf(src);
+  if (planLightboxIdx === -1) planLightboxIdx = 0;
+  const lb = document.getElementById('planLightbox');
+  document.getElementById('planLightboxImg').src = planLightboxSrcs[planLightboxIdx];
+  lb.classList.add('open');
+}
+function closePlanLightbox() {
+  document.getElementById('planLightbox').classList.remove('open');
+}
+function navPlanLightbox(dir) {
+  planLightboxIdx = (planLightboxIdx + dir + planLightboxSrcs.length) % planLightboxSrcs.length;
+  document.getElementById('planLightboxImg').src = planLightboxSrcs[planLightboxIdx];
+}
+
+// make plan images clickable
+document.addEventListener('click', (e) => {
+  if (e.target.matches('.plan-card-imgs img')) {
+    openPlanLightbox(e.target.src);
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('planLightbox').classList.contains('open')) return;
+  if (e.key === 'Escape') closePlanLightbox();
+  if (e.key === 'ArrowLeft') navPlanLightbox(-1);
+  if (e.key === 'ArrowRight') navPlanLightbox(1);
 });
 </script>
 </body>
