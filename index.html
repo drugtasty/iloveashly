@@ -1291,6 +1291,9 @@ footer .credit {
   transform: translateY(-4px);
   box-shadow: 0 12px 40px rgba(236, 72, 153, 0.12);
 }
+.plan-card-wide {
+  grid-column: 1 / -1;
+}
 .plan-card-icon {
   font-size: 1.8rem;
   margin-bottom: 0.8rem;
@@ -1306,6 +1309,26 @@ footer .credit {
   color: var(--text-light);
   line-height: 1.6;
   font-weight: 300;
+}
+.plan-card-imgs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+.plan-card-imgs.single {
+  grid-template-columns: 1fr;
+}
+.plan-card-imgs img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid var(--pink-light);
+  transition: transform 0.3s;
+}
+.plan-card-imgs img:hover {
+  transform: scale(1.05);
 }
 .plan-card-status {
   display: inline-block;
@@ -2397,16 +2420,16 @@ if (sessionStorage.getItem('secretUnlocked') === '1') {
 
 // ═══ FUTURE PLANS DATA ═══
 const futurePlans = [
-  { icon: '✈️', title: 'Travel somewhere new', desc: 'Pick a place on the map and just go. It doesn\'t matter where — as long as we\'re together.', status: 'someday' },
-  { icon: '🎬', title: 'Marathon horror movies', desc: 'Watch every horror movie we\'ve been saving, with all the blankets and snacks.', status: 'todo' },
+  { icon: '💕', title: 'Spend the rest of our lives together', desc: 'Every morning waking up next to you. Every night falling asleep with you. Forever and always.', imgs: ['forever.jpg'], status: 'todo' },
+  { icon: '✈️', title: 'Travel to the countryside of Japan', desc: 'Walk through bamboo forests, visit ancient temples, eat authentic food, and get lost in the beauty of rural Japan together.', imgs: ['japan/village.jpg', 'japan/sakura.jpg', 'japan/temple.jpg', 'japan/mountains.jpg'], status: 'someday' },
+  { icon: '🖥️', title: 'Matching pink & black setups', desc: 'Side by side desks, matching aesthetic, same energy. Our own little gaming world.', imgs: ['setups/setup1.jpg', 'setups/setup2.jpg'], status: 'soon' },
+  { icon: '🏠', title: 'Move in together', desc: 'Our own place. Our rules. Our home. The beginning of everything.', imgs: ['home.jpg'], status: 'someday' },
+  { icon: '🎂', title: 'Celebrate our 1 year anniversary', desc: 'One full year of us. We\'ll celebrate every year after that, big or small.', imgs: ['celebrate.jpg'], status: 'todo' },
+  { icon: '🍳', title: 'Make meals together', desc: 'Pick a recipe, mess it up, order pizza anyway. The process is the point.', imgs: ['cooking.jpg'], status: 'soon' },
   { icon: '🎮', title: 'Beat a co-op game together', desc: 'Pick a game, start it, and play until we finish it together.', status: 'todo' },
   { icon: '🐱', title: 'Get a pet together someday', desc: 'Chloe needs a sibling. When the time is right, we\'ll find one.', status: 'someday' },
-  { icon: '🏠', title: 'Live together', desc: 'Wake up next to each other every single day. That\'s the dream.', status: 'someday' },
-  { icon: '🍜', title: 'Cook a meal together', desc: 'Pick a recipe, mess it up, order pizza anyway. The process is the point.', status: 'soon' },
-  { icon: '🌙', name: 'Late-night drives', title: 'Late-night drives with nowhere to go', desc: 'Music on, windows down, just us and the road.', status: 'soon' },
-  { icon: '💕', title: 'Anniversaries forever', desc: 'Celebrate every single year. Big or small. We always have each other.', status: 'todo' },
+  { icon: '🌙', title: 'Late-night drives with nowhere to go', desc: 'Music on, windows down, just us and the road.', status: 'soon' },
   { icon: '🎪', title: 'Go to a concert or festival', desc: 'See our favorite artists live. Sing every word together.', status: 'soon' },
-  { icon: '🌸', title: 'Sakura season in Japan', desc: 'One day, walk under cherry blossoms together.', status: 'someday' },
 ];
 
 futurePlans.forEach(p => {
@@ -2414,7 +2437,13 @@ futurePlans.forEach(p => {
   const statusLabel = p.status === 'todo' ? 'let\'s do it' : p.status === 'soon' ? 'coming soon' : 'someday';
   const card = document.createElement('div');
   card.className = 'plan-card';
-  card.innerHTML = '<div class="plan-card-icon">' + p.icon + '</div><div class="plan-card-title">' + p.title + '</div><div class="plan-card-desc">' + p.desc + '</div><div class="plan-card-status ' + statusClass + '">' + statusLabel + '</div>';
+  let imgsHtml = '';
+  if (p.imgs && p.imgs.length) {
+    const cls = p.imgs.length === 1 ? ' plan-card-imgs single' : ' plan-card-imgs';
+    imgsHtml = '<div class="' + cls + '">' + p.imgs.map(src => '<img src="plans/' + src + '" alt="' + p.title + '" loading="lazy">').join('') + '</div>';
+  }
+  card.innerHTML = '<div class="plan-card-icon">' + p.icon + '</div><div class="plan-card-title">' + p.title + '</div><div class="plan-card-desc">' + p.desc + '</div>' + imgsHtml + '<div class="plan-card-status ' + statusClass + '">' + statusLabel + '</div>';
+  if (p.imgs && p.imgs.length >= 2) card.classList.add('plan-card-wide');
   plansGrid.appendChild(card);
 });
 </script>
