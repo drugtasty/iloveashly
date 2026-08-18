@@ -1846,9 +1846,8 @@ if (syncBtn) {
 }
 
 // ═══ OFFSET CONTROLS: shift all lyrics ±0.5s per click ═══
-let lyricsOffset = 0;
-const savedOffset = parseFloat(localStorage.getItem('lyricsOffset') || '0');
-if (!isNaN(savedOffset)) lyricsOffset = savedOffset;
+let lyricsOffset = parseFloat(localStorage.getItem('lyricsOffset') || '0');
+if (isNaN(lyricsOffset)) lyricsOffset = 0;
 const offsetValue = document.getElementById('offsetValue');
 const offsetMinus = document.getElementById('offsetMinus');
 const offsetPlus = document.getElementById('offsetPlus');
