@@ -1279,9 +1279,20 @@ footer .credit {
 
 /* ── FUTURE PLANS ── */
 .plans-section {
-  background: linear-gradient(180deg, var(--pink-pale) 0%, var(--cream) 100%);
+  background: var(--pink-pale);
+  background-image:
+    url("stickers/hello-kitty/98536-hellokitty-heart.png"),
+    url("stickers/hello-kitty/801575-hellokitty-bow.png"),
+    url("stickers/hello-kitty/862377-hellokitty-sparkle.png"),
+    url("stickers/sanrio-hearts/1364-hellokittyheart.png"),
+    url("stickers/hello-kitty/974829-hellokitty-flower.png"),
+    url("stickers/hello-kitty/883640-hellokitty-bows.png");
+  background-size: 60px, 50px, 55px, 45px, 50px, 48px;
+  background-position: 5% 10%, 90% 15%, 15% 85%, 85% 80%, 50% 5%, 50% 95%;
+  background-repeat: no-repeat;
   min-height: 100vh;
   padding: 6rem 2rem 4rem;
+  position: relative;
 }
 .plans-section.hidden { display: none; }
 .plans-grid {
@@ -1685,7 +1696,6 @@ footer .credit {
 <!-- ═══════ EXTRAS ═══════ -->
 <section class="extras-section" id="extras">
   <div class="deco-sticker" style="top:8%;left:5%;width:55px;opacity:0.2;animation:float 4s ease-in-out infinite;"><img src="stickers/hello-kitty/622305-hellokitty-hearteyes.png"></div>
-  <div class="deco-sticker" style="top:12%;right:6%;width:48px;opacity:0.18;animation:float 3.5s 1s ease-in-out infinite;"><img src="stickers/sanrio/33364-hello-kitty.gif"></div>
   <div class="deco-sticker" style="bottom:10%;left:8%;width:50px;opacity:0.15;animation:float 5s 2s ease-in-out infinite;"><img src="stickers/hello-kitty/643415-hellokitty-cake.png"></div>
   <div class="deco-sticker" style="bottom:15%;right:4%;width:45px;opacity:0.2;animation:float 4s 0.5s ease-in-out infinite;"><img src="stickers/sanrio-hearts/8154-hellokittyheart.gif"></div>
   <div class="reveal">
@@ -1766,7 +1776,7 @@ footer .credit {
       <div class="extras-card">
         <div class="extras-card-title">future pet?</div>
         <div style="text-align:center;">
-          <img src="bunny.jpg" alt="cute bunny" style="width:100%;max-width:260px;border-radius:16px;border:2px solid var(--pink-light);margin-top:0.5rem;">
+          <img src="bunny2.jpg" alt="cute bunny" style="width:100%;max-width:260px;border-radius:16px;border:2px solid var(--pink-light);margin-top:0.5rem;">
           <div style="font-size:0.75rem;color:var(--text-light);margin-top:0.6rem;font-style:italic;">or maybe a kitty... or another doggie</div>
           <img src="kitty-cat.jpg" alt="cute cat" style="width:100%;max-width:260px;border-radius:16px;border:2px solid var(--pink-light);margin-top:0.6rem;">
         </div>
@@ -1814,7 +1824,6 @@ footer .credit {
     <img src="stickers/hello-kitty/801575-hellokitty-bow.png" alt="bow" style="height:40px; margin: 0 6px;">
     <img src="stickers/korilakkuma/6238-korilakkuma.png" alt="kori" style="height:40px; margin: 0 6px;">
     <img src="stickers/hello-kitty/862377-hellokitty-sparkle.png" alt="sparkle" style="height:40px; margin: 0 6px;">
-    <img src="stickers/sanrio/33364-hello-kitty.gif" alt="kitty" style="height:40px; margin: 0 6px;">
     <img src="stickers/sanrio-hearts/1364-hellokittyheart.gif" alt="heart" style="height:40px; margin: 0 6px;">
     <img src="stickers/hello-kitty/622305-hellokitty-hearteyes.png" alt="heart eyes" style="height:40px; margin: 0 6px;">
     <img src="stickers/sanrio-hearts/8154-hellokittyheart.gif" alt="heart" style="height:40px; margin: 0 6px;">
@@ -1850,7 +1859,9 @@ footer .credit {
 <!-- secret password modal -->
 <div class="secret-overlay" id="secretOverlay" onclick="closeSecret(event)">
   <div class="secret-box" onclick="event.stopPropagation()">
-    <div class="secret-box-icon">🔒</div>
+    <div class="secret-box-icon">
+      <img src="stickers/hello-kitty/862377-hellokitty-sparkle.png" style="height:50px;" alt="kitty">
+    </div>
     <div class="secret-box-title">for our eyes only</div>
     <div class="secret-box-hint">enter our special date</div>
     <input class="secret-input" id="secretInput" type="password" maxlength="20" placeholder="mmddyy" autofocus>
@@ -1873,6 +1884,12 @@ footer .credit {
   <div class="deco-sticker" style="top:10%;right:5%;width:45px;opacity:0.18;animation:float 3.5s 1s ease-in-out infinite;"><img src="stickers/hello-kitty/36673-hellokitty-wave.png"></div>
   <div class="deco-sticker" style="bottom:8%;left:6%;width:42px;opacity:0.15;animation:float 5s 2s ease-in-out infinite;"><img src="stickers/sanrio-hearts/43990-sanriohearts.gif"></div>
   <div class="deco-sticker" style="bottom:12%;right:4%;width:48px;opacity:0.2;animation:float 4s 0.5s ease-in-out infinite;"><img src="stickers/hello-kitty/110201-hellokitty-blush.png"></div>
+  <div class="deco-sticker" style="top:25%;left:2%;width:40px;opacity:0.15;animation:float 4.5s 1.5s ease-in-out infinite;"><img src="stickers/hello-kitty/643415-hellokitty-kiss.png"></div>
+  <div class="deco-sticker" style="top:20%;right:2%;width:38px;opacity:0.18;animation:float 3s 0.8s ease-in-out infinite;"><img src="stickers/hello-kitty/278448-hello-kitty-happy.png"></div>
+  <div class="deco-sticker" style="bottom:25%;left:3%;width:42px;opacity:0.15;animation:float 5s 3s ease-in-out infinite;"><img src="stickers/hello-kitty/605861-hellokitty-laugh.png"></div>
+  <div class="deco-sticker" style="bottom:20%;right:3%;width:40px;opacity:0.18;animation:float 4s 2.5s ease-in-out infinite;"><img src="stickers/sanrio-hearts/8154-hellokittyheart.gif"></div>
+  <div class="deco-sticker" style="top:45%;left:1%;width:36px;opacity:0.12;animation:float 3.5s 1.2s ease-in-out infinite;"><img src="stickers/hello-kitty/36673-hellokitty-wink.png"></div>
+  <div class="deco-sticker" style="top:50%;right:1%;width:38px;opacity:0.15;animation:float 4.5s 0.3s ease-in-out infinite;"><img src="stickers/hello-kitty/622305-hellokitty-hearteyes.png"></div>
   <div class="reveal">
     <p class="section-title">Our Future Plans</p>
     <p class="section-sub">all the things we're going to do together</p>
