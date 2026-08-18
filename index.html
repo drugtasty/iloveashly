@@ -1148,6 +1148,194 @@ footer .credit {
   section { padding: 5rem 1.5rem; }
   .hero h1 { font-size: clamp(3.5rem, 12vw, 6rem); }
 }
+
+/* ── SECRET / PASSWORD MODAL ── */
+.secret-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(107, 76, 90, 0.5);
+  backdrop-filter: blur(8px);
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+.secret-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.secret-box {
+  background: var(--white);
+  border-radius: 24px;
+  padding: 3rem;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  border: 2px solid var(--pink-light);
+  transform: scale(0.9) translateY(20px);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.secret-overlay.open .secret-box {
+  transform: scale(1) translateY(0);
+}
+.secret-box-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.8rem;
+}
+.secret-box-title {
+  font-family: 'Sacramento', cursive;
+  font-size: 2rem;
+  color: var(--pink-deep);
+  margin-bottom: 0.5rem;
+}
+.secret-box-hint {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  margin-bottom: 1.5rem;
+}
+.secret-input {
+  width: 100%;
+  padding: 0.8rem 1.2rem;
+  border: 2px solid var(--pink-light);
+  border-radius: 16px;
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.1rem;
+  text-align: center;
+  letter-spacing: 0.3em;
+  outline: none;
+  transition: border-color 0.3s;
+  background: var(--pink-pale);
+  color: var(--text);
+}
+.secret-input:focus {
+  border-color: var(--pink-deep);
+}
+.secret-input.error {
+  border-color: #ef4444;
+  animation: shake 0.4s;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+.secret-error {
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+  min-height: 1rem;
+}
+.secret-btn {
+  margin-top: 1.2rem;
+  background: var(--pink-deep);
+  border: none;
+  color: var(--white);
+  padding: 0.7rem 2.5rem;
+  border-radius: 50px;
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+  letter-spacing: 0.05em;
+}
+.secret-btn:hover {
+  background: #db2777;
+  transform: scale(1.05);
+}
+
+/* ── FUTURE PLANS ── */
+.plans-section {
+  background: linear-gradient(180deg, var(--pink-pale) 0%, var(--cream) 100%);
+  min-height: 100vh;
+  padding: 6rem 2rem 4rem;
+}
+.plans-section.hidden { display: none; }
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  max-width: 1000px;
+  width: 100%;
+}
+.plan-card {
+  background: var(--white);
+  border: 2px solid var(--pink-light);
+  border-radius: 20px;
+  padding: 1.8rem;
+  transition: transform 0.3s, box-shadow 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.plan-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  border-radius: 20px 20px 0 0;
+}
+.plan-card:nth-child(6n+1)::before { background: linear-gradient(90deg, #ec4899, #f9a8d4); }
+.plan-card:nth-child(6n+2)::before { background: linear-gradient(90deg, #c084fc, #ec4899); }
+.plan-card:nth-child(6n+3)::before { background: linear-gradient(90deg, #f9a8d4, #fbbf24); }
+.plan-card:nth-child(6n+4)::before { background: linear-gradient(90deg, #86efac, #67e8f9); }
+.plan-card:nth-child(6n+5)::before { background: linear-gradient(90deg, #fdba74, #fb923c); }
+.plan-card:nth-child(6n+6)::before { background: linear-gradient(90deg, #93c5fd, #a78bfa); }
+.plan-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(236, 72, 153, 0.12);
+}
+.plan-card-icon {
+  font-size: 1.8rem;
+  margin-bottom: 0.8rem;
+}
+.plan-card-title {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+.plan-card-desc {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  line-height: 1.6;
+  font-weight: 300;
+}
+.plan-card-status {
+  display: inline-block;
+  margin-top: 0.8rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.8rem;
+  border-radius: 50px;
+}
+.plan-status-todo {
+  background: var(--pink-light);
+  color: var(--pink-deep);
+}
+.plan-status-soon {
+  background: #e0e7ff;
+  color: #6366f1;
+}
+.plan-status-someday {
+  background: #fef3c7;
+  color: #d97706;
+}
+.plans-locked-msg {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin-top: 2rem;
+  font-style: italic;
+}
 </style>
 </head>
 <body>
@@ -1162,6 +1350,7 @@ footer .credit {
   <a href="#story">story</a>
   <a href="#music">music</a>
   <a href="#extras">extras</a>
+  <a href="#secret" onclick="event.preventDefault(); openSecret()">secret</a>
 </nav>
 
 <!-- ═══════ HERO ═══════ -->
@@ -1583,6 +1772,28 @@ footer .credit {
   <button class="lightbox-close">&times;</button>
   <img id="lightboxImg" src="" alt="photo">
 </div>
+
+<!-- secret password modal -->
+<div class="secret-overlay" id="secretOverlay" onclick="closeSecret(event)">
+  <div class="secret-box" onclick="event.stopPropagation()">
+    <div class="secret-box-icon">🔒</div>
+    <div class="secret-box-title">for our eyes only</div>
+    <div class="secret-box-hint">enter our special date</div>
+    <input class="secret-input" id="secretInput" type="password" maxlength="20" placeholder="mmddyy" autofocus>
+    <div class="secret-error" id="secretError"></div>
+    <button class="secret-btn" id="secretBtn" onclick="trySecret()">unlock</button>
+  </div>
+</div>
+
+<!-- future plans (hidden until unlocked) -->
+<section class="plans-section hidden" id="secret">
+  <div class="reveal">
+    <p class="section-title">Our Future Plans</p>
+    <p class="section-sub">all the things we're going to do together</p>
+    <div class="plans-grid" id="plansGrid">
+    </div>
+  </div>
+</section>
 
 <script>
 // ══════════════════════════════════════
@@ -2139,6 +2350,73 @@ document.querySelectorAll('.movie-item').forEach(item => {
 movieModalClose.addEventListener('click', () => movieModal.classList.remove('open'));
 movieModal.addEventListener('click', (e) => { if (e.target === movieModal) movieModal.classList.remove('open'); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') movieModal.classList.remove('open'); });
+
+// ═══ SECRET / PASSWORD SECTION ═══
+const SECRET_PASS = '040626';
+const secretOverlay = document.getElementById('secretOverlay');
+const secretInput = document.getElementById('secretInput');
+const secretError = document.getElementById('secretError');
+const plansSection = document.getElementById('secret');
+const plansGrid = document.getElementById('plansGrid');
+
+function openSecret() {
+  if (sessionStorage.getItem('secretUnlocked') === '1') {
+    plansSection.scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+  secretOverlay.classList.add('open');
+  setTimeout(() => secretInput.focus(), 400);
+}
+function closeSecret(e) {
+  if (e && e.target !== secretOverlay) return;
+  secretOverlay.classList.remove('open');
+  secretInput.value = '';
+  secretError.textContent = '';
+  secretInput.classList.remove('error');
+}
+function trySecret() {
+  if (secretInput.value === SECRET_PASS) {
+    sessionStorage.setItem('secretUnlocked', '1');
+    secretOverlay.classList.remove('open');
+    plansSection.classList.remove('hidden');
+    plansSection.scrollIntoView({ behavior: 'smooth' });
+    initReveal();
+  } else {
+    secretError.textContent = 'wrong code, try again';
+    secretInput.classList.add('error');
+    secretInput.value = '';
+    setTimeout(() => secretInput.classList.remove('error'), 500);
+  }
+}
+secretInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') trySecret(); });
+
+// check on load if already unlocked this session
+if (sessionStorage.getItem('secretUnlocked') === '1') {
+  plansSection.classList.remove('hidden');
+}
+
+// ═══ FUTURE PLANS DATA ═══
+const futurePlans = [
+  { icon: '✈️', title: 'Travel somewhere new', desc: 'Pick a place on the map and just go. It doesn\'t matter where — as long as we\'re together.', status: 'someday' },
+  { icon: '🎬', title: 'Marathon horror movies', desc: 'Watch every horror movie we\'ve been saving, with all the blankets and snacks.', status: 'todo' },
+  { icon: '🎮', title: 'Beat a co-op game together', desc: 'Pick a game, start it, and play until we finish it together.', status: 'todo' },
+  { icon: '🐱', title: 'Get a pet together someday', desc: 'Chloe needs a sibling. When the time is right, we\'ll find one.', status: 'someday' },
+  { icon: '🏠', title: 'Live together', desc: 'Wake up next to each other every single day. That\'s the dream.', status: 'someday' },
+  { icon: '🍜', title: 'Cook a meal together', desc: 'Pick a recipe, mess it up, order pizza anyway. The process is the point.', status: 'soon' },
+  { icon: '🌙', name: 'Late-night drives', title: 'Late-night drives with nowhere to go', desc: 'Music on, windows down, just us and the road.', status: 'soon' },
+  { icon: '💕', title: 'Anniversaries forever', desc: 'Celebrate every single year. Big or small. We always have each other.', status: 'todo' },
+  { icon: '🎪', title: 'Go to a concert or festival', desc: 'See our favorite artists live. Sing every word together.', status: 'soon' },
+  { icon: '🌸', title: 'Sakura season in Japan', desc: 'One day, walk under cherry blossoms together.', status: 'someday' },
+];
+
+futurePlans.forEach(p => {
+  const statusClass = p.status === 'todo' ? 'plan-status-todo' : p.status === 'soon' ? 'plan-status-soon' : 'plan-status-someday';
+  const statusLabel = p.status === 'todo' ? 'let\'s do it' : p.status === 'soon' ? 'coming soon' : 'someday';
+  const card = document.createElement('div');
+  card.className = 'plan-card';
+  card.innerHTML = '<div class="plan-card-icon">' + p.icon + '</div><div class="plan-card-title">' + p.title + '</div><div class="plan-card-desc">' + p.desc + '</div><div class="plan-card-status ' + statusClass + '">' + statusLabel + '</div>';
+  plansGrid.appendChild(card);
+});
 </script>
 </body>
 </html>
