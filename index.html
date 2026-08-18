@@ -775,6 +775,46 @@ section {
   color: var(--pink);
   font-weight: 600;
 }
+.sync-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+.offset-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.offset-label {
+  font-size: 0.65rem;
+  color: var(--text-light);
+  font-weight: 600;
+}
+.offset-btn {
+  width: 32px;
+  height: 28px;
+  border: 2px solid var(--pink-light);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--pink-deep);
+  font-size: 0.6rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.offset-btn:hover {
+  background: var(--pink-pale);
+  border-color: var(--pink);
+}
+.offset-value {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--pink-deep);
+  min-width: 40px;
+  text-align: center;
+}
 
 /* ── EXTRAS ── */
 .extras-section {
@@ -1275,7 +1315,15 @@ footer .credit {
         <div class="lyrics-line" data-time="99">That you love me</div>
         <div class="lyrics-line" data-time="104">Forever ♡</div>
         <div class="sync-status" id="syncStatus"></div>
-        <button class="sync-btn" id="syncBtn">🔄 re-sync lyrics</button>
+        <div class="sync-controls">
+          <button class="sync-btn" id="syncBtn">🔄 re-sync lyrics</button>
+          <div class="offset-row">
+            <span class="offset-label">timing offset:</span>
+            <button class="offset-btn" id="offsetMinus">◀◀</button>
+            <span class="offset-value" id="offsetValue">0.0s</span>
+            <button class="offset-btn" id="offsetPlus">▶▶</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1617,11 +1665,15 @@ let lyricsData = [
 ];
 
 const saved = localStorage.getItem('lyricsTimestamps');
+const savedOffset = parseFloat(localStorage.getItem('lyricsOffset') || '0');
 if (saved) {
   try {
     const parsed = JSON.parse(saved);
-    if (parsed && parsed.length === lyricsTexts.length && parsed[0].time >= 20) {
-      lyricsData = parsed;
+    if (parsed && parsed.length === lyricsTexts.length && parsed[0].time >= 0) {
+      lyricsData = parsed.map((d, i) => ({
+        time: parseFloat((d.time + (isNaN(savedOffset) ? 0 : savedOffset)).toFixed(2)),
+        text: d.text
+      }));
     } else {
       localStorage.removeItem('lyricsTimestamps');
     }
@@ -1780,10 +1832,52 @@ if (syncBtn) {
   syncBtn.addEventListener('click', () => {
     autoSyncDone = false;
     localStorage.removeItem('lyricsTimestamps');
+    localStorage.removeItem('lyricsOffset');
+    lyricsOffset = 0;
+    updateOffsetDisplay();
     resetLyrics();
     autoSyncLyrics();
   });
 }
+
+// ═══ OFFSET CONTROLS: shift all lyrics ±0.5s per click ═══
+let lyricsOffset = 0;
+const savedOffset = parseFloat(localStorage.getItem('lyricsOffset') || '0');
+if (!isNaN(savedOffset)) lyricsOffset = savedOffset;
+const offsetValue = document.getElementById('offsetValue');
+const offsetMinus = document.getElementById('offsetMinus');
+const offsetPlus = document.getElementById('offsetPlus');
+
+function updateOffsetDisplay() {
+  offsetValue.textContent = (lyricsOffset >= 0 ? '+' : '') + lyricsOffset.toFixed(1) + 's';
+}
+
+function applyOffset() {
+  const base = localStorage.getItem('lyricsTimestamps');
+  let baseData;
+  try { baseData = JSON.parse(base); } catch(e) {}
+  if (!baseData || baseData.length !== lyricsTexts.length) return;
+  for (let i = 0; i < lyricsTexts.length; i++) {
+    lyricsData[i].time = parseFloat((baseData[i].time + lyricsOffset).toFixed(2));
+  }
+  applyTimestamps();
+  localStorage.setItem('lyricsOffset', lyricsOffset.toString());
+  updateOffsetDisplay();
+}
+
+if (offsetMinus) {
+  offsetMinus.addEventListener('click', () => {
+    lyricsOffset -= 0.5;
+    applyOffset();
+  });
+}
+if (offsetPlus) {
+  offsetPlus.addEventListener('click', () => {
+    lyricsOffset += 0.5;
+    applyOffset();
+  });
+}
+updateOffsetDisplay();
 
 // ═══ HK CUSTOM PLAYER ═══
 const hkPlayBtn = document.getElementById('hkPlayBtn');
