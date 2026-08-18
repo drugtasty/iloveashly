@@ -1617,7 +1617,16 @@ let lyricsData = [
 ];
 
 const saved = localStorage.getItem('lyricsTimestamps');
-if (saved) { try { lyricsData = JSON.parse(saved); } catch(e) {} }
+if (saved) {
+  try {
+    const parsed = JSON.parse(saved);
+    if (parsed && parsed.length === lyricsTexts.length && parsed[0].time >= 20) {
+      lyricsData = parsed;
+    } else {
+      localStorage.removeItem('lyricsTimestamps');
+    }
+  } catch(e) { localStorage.removeItem('lyricsTimestamps'); }
+}
 
 const lyricsContainer = document.querySelector('.music-lyrics');
 const lyricsLines = document.querySelectorAll('.lyrics-line');
@@ -1673,9 +1682,10 @@ async function autoSyncLyrics() {
 
   const windowSize = Math.floor(sampleRate * 0.05);
   const hopSize = Math.floor(sampleRate * 0.025);
-  const silenceThreshold = 0.02;
-  const minGapBetween = 0.8;
-  const minOnsetEnergy = 0.04;
+  const minGapBetween = 1.5;
+  const minOnsetEnergy = 0.03;
+  const lookback = 4;
+  const analyzeStartSec = HK_START - 2;
 
   const energies = [];
   for (let i = 0; i + windowSize < rawData.length; i += hopSize) {
@@ -1685,12 +1695,11 @@ async function autoSyncLyrics() {
   }
 
   const onsets = [];
-  let lastOnsetTime = -minGapBetween;
-  const lookback = 4;
+  let lastOnsetTime = analyzeStartSec - minGapBetween;
 
   for (let i = lookback; i < energies.length; i++) {
     const t = (i * hopSize) / sampleRate;
-    if (t < 1) continue;
+    if (t < analyzeStartSec) continue;
     let recentAvg = 0, prevAvg = 0;
     for (let k = 0; k < lookback; k++) {
       recentAvg += energies[i - k];
@@ -1698,7 +1707,7 @@ async function autoSyncLyrics() {
     }
     recentAvg /= lookback;
     prevAvg /= lookback;
-    if (recentAvg > minOnsetEnergy && recentAvg > prevAvg * 1.5 && (t - lastOnsetTime) >= minGapBetween) {
+    if (recentAvg > minOnsetEnergy && recentAvg > prevAvg * 1.4 && (t - lastOnsetTime) >= minGapBetween) {
       onsets.push(t);
       lastOnsetTime = t;
     }
@@ -1706,14 +1715,14 @@ async function autoSyncLyrics() {
 
   const timestamps = [];
   for (let i = 0; i < lyricsTexts.length; i++) {
-    const t = onsets[i] !== undefined ? parseFloat(onsets[i].toFixed(2)) : (i > 0 ? timestamps[i-1].time + 5 : 2);
+    const t = onsets[i] !== undefined ? parseFloat(onsets[i].toFixed(2)) : (i > 0 ? timestamps[i-1].time + 6 : HK_START);
     timestamps.push({ time: t, text: lyricsTexts[i] });
   }
   lyricsData = timestamps;
   localStorage.setItem('lyricsTimestamps', JSON.stringify(lyricsData));
   applyTimestamps();
 
-  syncStatus.textContent = 'auto-synced! (' + onsets.length + ' phrases found)';
+  syncStatus.textContent = 'auto-synced! (' + onsets.length + ' vocal phrases found)';
   syncStatus.style.color = '#4CAF50';
   setTimeout(() => { syncStatus.style.display = 'none'; syncStatus.style.color = ''; }, 3000);
   audioCtx.close();
@@ -1824,17 +1833,11 @@ hkBarWrap.addEventListener('click', (e) => {
   songAudio.currentTime = pct * songAudio.duration;
 });
 
-// ═══ AUTO-PLAY ON NAV CLICK ═══
+// ═══ NAV CLICK SCROLLS TO MUSIC (no auto-play) ═══
 document.querySelectorAll('a[href="#music"]').forEach(a => {
   a.addEventListener('click', (e) => {
     e.preventDefault();
     document.getElementById('music').scrollIntoView({ behavior: 'smooth' });
-    setTimeout(() => {
-      if (songAudio && songAudio.paused) {
-        songAudio.currentTime = HK_START;
-        songAudio.play();
-      }
-    }, 600);
   });
 });
 </script>
