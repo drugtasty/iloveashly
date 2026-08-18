@@ -1662,14 +1662,14 @@ function applyTimestamps() {
 }
 applyTimestamps();
 
-// ═══ ADVANCED AUTO-SYNC: spectral flux onset + dynamic programming alignment ═══
+// ═══ AUTO-SYNC: energy envelope onset detection ═══
 let autoSyncDone = false;
 
 async function autoSyncLyrics() {
   if (autoSyncDone) return;
   autoSyncDone = true;
   const syncStatus = document.getElementById('syncStatus');
-  syncStatus.textContent = 'analyzing waveform...';
+  syncStatus.textContent = 'analyzing audio...';
   syncStatus.style.display = 'block';
   syncStatus.style.color = 'var(--pink-deep)';
 
@@ -1679,170 +1679,92 @@ async function autoSyncLyrics() {
     const arrayBuf = await response.arrayBuffer();
     const audioBuf = await audioCtx.decodeAudioData(arrayBuf);
 
-    const rawL = audioBuf.getChannelData(0);
-    const rawR = audioBuf.numberOfChannels > 1 ? audioBuf.getChannelData(1) : rawL;
+    const raw = audioBuf.getChannelData(0);
     const sr = audioBuf.sampleRate;
-    const fftSize = 2048;
-    const hopSize = 512;
-    const binCount = fftSize / 2;
+    const totalDuration = raw.length / sr;
 
-    const hannWindow = new Float32Array(fftSize);
-    for (let i = 0; i < fftSize; i++) hannWindow[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (fftSize - 1)));
+    const winMs = 30;
+    const hopMs = 10;
+    const winLen = Math.floor(sr * winMs / 1000);
+    const hopLen = Math.floor(sr * hopMs / 1000);
 
-    const magFrames = [];
-    for (let pos = 0; pos + fftSize <= rawL.length; pos += hopSize) {
-      const frameL = new Float32Array(fftSize);
-      const frameR = new Float32Array(fftSize);
-      for (let i = 0; i < fftSize; i++) {
-        frameL[i] = (rawL[pos + i] + rawR[pos + i]) * 0.5 * hannWindow[i];
-      }
-      const re = frameL;
-      const im = new Float32Array(fftSize);
-      fftInPlace(re, im);
-      const mags = new Float32Array(binCount);
-      for (let k = 0; k < binCount; k++) mags[k] = Math.sqrt(re[k] * re[k] + im[k] * im[k]);
-      magFrames.push(mags);
+    const energies = [];
+    for (let i = 0; i + winLen < raw.length; i += hopLen) {
+      let sum = 0;
+      for (let j = 0; j < winLen; j++) sum += raw[i + j] * raw[i + j];
+      energies.push(Math.sqrt(sum / winLen));
     }
 
-    const spectralFlux = new Float32Array(magFrames.length);
-    for (let i = 1; i < magFrames.length; i++) {
-      let flux = 0;
-      for (let k = 0; k < binCount; k++) {
-        const diff = magFrames[i][k] - magFrames[i - 1][k];
-        if (diff > 0) flux += diff;
+    const smoothWin = 50;
+    const smoothed = new Float32Array(energies.length);
+    for (let i = 0; i < energies.length; i++) {
+      let sum = 0, count = 0;
+      for (let j = Math.max(0, i - smoothWin); j <= Math.min(energies.length - 1, i + smoothWin); j++) {
+        sum += energies[j]; count++;
       }
-      spectralFlux[i] = flux;
+      smoothed[i] = sum / count;
     }
 
-    const medianWindow = 15;
+    const diff = new Float32Array(smoothed.length);
+    for (let i = 1; i < smoothed.length; i++) diff[i] = Math.max(0, smoothed[i] - smoothed[i - 1] * 1.05);
+
+    const thresholdWin = 100;
+    const minPeakGap = 2.5;
+    const rawPeaks = [];
+
+    for (let i = thresholdWin; i < diff.length - thresholdWin; i++) {
+      let localMax = 0;
+      for (let j = i - thresholdWin; j <= i + thresholdWin; j++) if (diff[j] > localMax) localMax = diff[j];
+      const threshold = localMax * 0.3;
+
+      if (diff[i] > threshold && diff[i] >= diff[i - 1] && diff[i] >= diff[i + 1]) {
+        const t = (i * hopLen) / sr;
+        rawPeaks.push({ time: t, strength: diff[i] });
+      }
+    }
+
     const peaks = [];
-    for (let i = medianWindow; i < spectralFlux.length - medianWindow; i++) {
-      const window = [];
-      for (let j = i - medianWindow; j <= i + medianWindow; j++) window.push(spectralFlux[j]);
-      window.sort((a, b) => a - b);
-      const median = window[Math.floor(window.length / 2)];
-      const threshold = median * 1.8 + 0.001;
-      if (spectralFlux[i] > threshold && spectralFlux[i] >= spectralFlux[i - 1] && spectralFlux[i] >= spectralFlux[i + 1]) {
-        const timeSec = (i * hopSize) / sr;
-        peaks.push({ time: timeSec, strength: spectralFlux[i] });
+    for (const p of rawPeaks) {
+      if (peaks.length === 0 || (p.time - peaks[peaks.length - 1].time) >= minPeakGap) {
+        peaks.push(p);
+      } else if (p.strength > peaks[peaks.length - 1].strength) {
+        peaks[peaks.length - 1] = p;
       }
     }
 
-    const minGap = 2.0;
-    const filteredPeaks = [];
-    for (const p of peaks) {
-      if (filteredPeaks.length === 0 || (p.time - filteredPeaks[filteredPeaks.length - 1].time) >= minGap) {
-        filteredPeaks.push(p);
-      } else if (p.strength > filteredPeaks[filteredPeaks.length - 1].strength) {
-        filteredPeaks[filteredPeaks.length - 1] = p;
-      }
-    }
-
-    const analyzeFrom = HK_START - 3;
-    const vocalPeaks = filteredPeaks.filter(p => p.time >= analyzeFrom);
+    const vocalPeaks = peaks.filter(p => p.time >= HK_START - 2);
+    vocalPeaks.sort((a, b) => b.strength - a.strength);
+    const topPeaks = vocalPeaks.slice(0, Math.min(vocalPeaks.length, 40));
+    topPeaks.sort((a, b) => a.time - b.time);
 
     const N = lyricsTexts.length;
-    const M = vocalPeaks.length;
 
-    if (M >= N) {
-      const cost = new Float32Array(M * N);
-      const parent = new Int32Array(M * N).fill(-1);
-      const INF = 1e9;
-
-      for (let j = 0; j < M; j++) cost[j * N + 0] = 0;
-
-      for (let i = 1; i < N; i++) {
-        let bestCost = INF, bestJ = -1;
-        for (let j = 0; j < M; j++) {
-          let minPrev = INF;
-          for (let pj = 0; pj < j; pj++) {
-            const prevVal = cost[pj * N + (i - 1)];
-            if (prevVal < minPrev) { minPrev = prevVal; }
-          }
-          const gap = vocalPeaks[j].time - (i > 0 && parent[(j) * N + (i - 1)] >= 0 ? vocalPeaks[parent[(j) * N + (i - 1)]].time : analyzeFrom);
-          const idealGap = 6;
-          const gapCost = Math.abs(gap - idealGap) * 2;
-          const strengthBonus = -Math.log(vocalPeaks[j].strength + 0.001) * 0.5;
-          cost[j * N + i] = minPrev + gapCost + strengthBonus;
-        }
-      }
-
-      let finalBest = INF, finalJ = -1;
-      for (let j = 0; j < M; j++) {
-        if (cost[j * N + (N - 1)] < finalBest) {
-          finalBest = cost[j * N + (N - 1)];
-          finalJ = j;
-        }
-      }
-
-      const aligned = new Array(N);
-      let curJ = finalJ, curI = N - 1;
-      while (curI >= 0) {
-        aligned[curI] = vocalPeaks[curJ].time;
-        let bestPrev = INF, bestPj = -1;
-        for (let pj = 0; pj < curJ; pj++) {
-          if (cost[pj * N + (curI > 0 ? curI - 1 : 0)] < bestPrev) {
-            bestPrev = cost[pj * N + (curI > 0 ? curI - 1 : 0)];
-            bestPj = pj;
-          }
-        }
-        curJ = bestPj;
-        curI--;
-      }
-
+    if (topPeaks.length >= N) {
       for (let i = 0; i < N; i++) {
-        lyricsData[i].time = parseFloat(aligned[i].toFixed(2));
+        lyricsData[i].time = parseFloat(topPeaks[i].time.toFixed(2));
+      }
+    } else if (topPeaks.length >= 3) {
+      const avgGap = (topPeaks[topPeaks.length - 1].time - topPeaks[0].time) / (topPeaks.length - 1);
+      for (let i = 0; i < N; i++) {
+        lyricsData[i].time = parseFloat((topPeaks[0].time + i * avgGap).toFixed(2));
       }
     } else {
-      const spacing = vocalPeaks.length > 1
-        ? (vocalPeaks[vocalPeaks.length - 1].time - vocalPeaks[0].time) / (vocalPeaks.length - 1)
-        : 5;
+      const fallbackSpacing = (totalDuration - HK_START) / N;
       for (let i = 0; i < N; i++) {
-        lyricsData[i].time = parseFloat((vocalPeaks[0] ? vocalPeaks[0].time + i * spacing : analyzeFrom + i * 5).toFixed(2));
+        lyricsData[i].time = parseFloat((HK_START + i * fallbackSpacing).toFixed(2));
       }
     }
 
     localStorage.setItem('lyricsTimestamps', JSON.stringify(lyricsData));
     applyTimestamps();
-    syncStatus.textContent = 'auto-synced! (' + vocalPeaks.length + ' vocal peaks detected)';
+    syncStatus.textContent = 'auto-synced! (' + topPeaks.length + ' peaks found)';
     syncStatus.style.color = '#4CAF50';
     setTimeout(() => { syncStatus.style.display = 'none'; syncStatus.style.color = ''; }, 3000);
     audioCtx.close();
   } catch (e) {
-    syncStatus.textContent = 'sync failed, using default timestamps';
+    syncStatus.textContent = 'sync failed — using default timestamps';
     syncStatus.style.color = '#f44336';
     setTimeout(() => { syncStatus.style.display = 'none'; syncStatus.style.color = ''; }, 3000);
-  }
-}
-
-function fftInPlace(re, im) {
-  const n = re.length;
-  if (n === 1) return;
-  let j = 0;
-  for (let i = 0; i < n - 1; i++) {
-    if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; }
-    let k = n >> 1;
-    while (k <= j) { j -= k; k >>= 1; }
-    j += k;
-  }
-  for (let len = 2; len <= n; len *= 2) {
-    const half = len / 2;
-    const angle = -2 * Math.PI / len;
-    const wRe = Math.cos(angle), wIm = Math.sin(angle);
-    for (let i = 0; i < n; i += len) {
-      let curRe = 1, curIm = 0;
-      for (let k = 0; k < half; k++) {
-        const tRe = curRe * re[i + k + half] - curIm * im[i + k + half];
-        const tIm = curRe * im[i + k + half] + curIm * re[i + k + half];
-        re[i + k + half] = re[i + k] - tRe;
-        im[i + k + half] = im[i + k] - tIm;
-        re[i + k] += tRe;
-        im[i + k] += tIm;
-        const newRe = curRe * wRe - curIm * wIm;
-        curIm = curRe * wIm + curIm * wRe;
-        curRe = newRe;
-      }
-    }
   }
 }
 
